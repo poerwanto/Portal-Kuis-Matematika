@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Matriks (Anti-Copy / Terproteksi)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax for LaTeX Rendering -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['[', ']']]
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        /* CSS Tambahan untuk Mencegah Blok, Salin (Copy), dan Long-Press di HP */
+        .no-select {
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10 and IE 11 */
+            user-select: Standard Syntax; /* Standard */
+            -webkit-touch-callout: none; /* Mencegah menu konteks / long-press pop-up di iOS & Android */
+        }
+        .option-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen no-select" oncontextmenu="return false;">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md py-6 px-4 mb-6">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">Kuis Matriks (Terproteksi)</h1>
+                <p class="text-indigo-200 text-sm mt-1">Materi: Elemen, Ordo, Operasi, Determinan, Invers & Persamaan Matriks</p>
+            </div>
+            <div class="mt-4 sm:mt-0 flex items-center space-x-2">
+                <span class="bg-indigo-700 px-3 py-1.5 rounded-lg text-xs font-medium border border-indigo-500">
+                    Mode: Timer 60 Menit
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 flex-grow w-full mb-12">
+        
+        <!-- Intro Screen -->
+        <div id="intro-screen" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+            <h2 class="text-xl font-semibold mb-4 text-slate-900">Selamat Datang di Kuis Mandiri Matriks</h2>
+            <p class="text-slate-600 max-w-xl mx-auto mb-6 text-sm leading-relaxed">
+                Kuis ini terdiri dari 10 soal pilihan ganda. <b>Soal dan opsi terlindung (tidak dapat disalin/dicopy)</b>. Waktu pengerjaan dibatasi 60 menit.
+            </p>
+            
+            <!-- Input Identitas Siswa -->
+            <div class="max-w-md mx-auto mb-6 text-left space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Siswa:</label>
+                    <input type="text" id="student-name" placeholder="Masukkan nama Anda..." class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kelas / Nomor Absen:</label>
+                    <input type="text" id="student-class" placeholder="Contoh: XII IPA 1 / 15" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                </div>
+            </div>
+
+            <button type="button" onclick="startQuiz()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-8 py-3 rounded-xl shadow transition duration-200 cursor-pointer">
+                Mulai Kuis Sekarang
+            </button>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center space-y-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+            <h2 class="text-lg font-bold text-slate-900">Mengirim jawaban ke sistem...</h2>
+            <p class="text-sm text-slate-500">Mohon tunggu sebentar, jangan tutup halaman ini.</p>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden space-y-6">
+            <!-- Progress Bar & Timer Header -->
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-2">
+                <span id="question-counter" class="text-sm font-semibold text-indigo-600">Soal 1 dari 10</span>
+                <div class="flex items-center space-x-3">
+                    <span id="difficulty-badge" class="text-xs px-3 py-1 bg-slate-100 text-slate-700 rounded-full font-medium">Tingkat: Rendah</span>
+                    <div id="timer-box" class="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-lg text-xs font-bold flex items-center space-x-1">
+                        <span>⏱️ Waktu:</span>
+                        <span id="timer-display">60:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <!-- Teks Soal diberi kelas no-select agar tidak bisa ditekan lama/disorot -->
+                <div id="question-text" class="text-lg font-medium text-slate-900 mb-6 leading-relaxed no-select">
+                    <!-- Dynamic Question Text -->
+                </div>
+
+                <!-- Options List -->
+                <div id="options-container" class="space-y-3">
+                    <!-- Dynamic Options -->
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between items-center pt-2">
+                <button type="button" id="prev-btn" onclick="prevQuestion()" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                    Sebelumnya
+                </button>
+                <button type="button" id="next-btn" onclick="nextQuestion()" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow transition">
+                    Selanjutnya
+                </button>
+            </div>
+        </div>
+
+        <!-- Finish Screen -->
+        <div id="finish-screen" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center space-y-4">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+                ✓
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900">Kuis Selesai!</h2>
+            <p id="finish-message" class="text-slate-600 max-w-md mx-auto text-sm">
+                Terima kasih telah menyelesaikan seluruh soal latihan matriks ini. Data jawaban Anda telah berhasil terekam secara online.
+            </p>
+            <div class="pt-4">
+                <button type="button" onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2.5 rounded-xl transition">
+                    Selesai / Keluar
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        &copy; 2026 Kuis Matriks Interaktif. Terhubung ke Google Sheets.
+    </footer>
+
+    <!-- Script Quiz Logic -->
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOCWmUa3gh5daOIhoDDNnYYssTrrf3cc2tejW4anzjbevxsU9Bx2Y3ErdUtJjtJFzCTw/exec";
+
+        const quizData = [
+            {
+                id: 1,
+                difficulty: "Rendah",
+                question: "Diketahui matriks $P = \\begin{pmatrix} 3 & -2 & 5 \\\\ 0 & 4 & -1 \\end{pmatrix}$. Tentukan nilai elemen pada baris ke-2 kolom ke-3 ($p_{23}$).",
+                options: ["-1", "5", "4", "0"],
+                correct: 0
+            },
+            {
+                id: 2,
+                difficulty: "Rendah",
+                question: "Tentukan ordo dari matriks $A = \\begin{pmatrix} 2 & 1 & -3 \\\\ 4 & 0 & 2 \\\\ -1 & 5 & 6 \\end{pmatrix}$.",
+                options: ["3 \\times 3", "2 \\times 3", "3 \\times 2", "2 \\times 2"],
+                correct: 0
+            },
+            {
+                id: 3,
+                difficulty: "Rendah",
+                question: "Diketahui kesamaan matriks $\\begin{pmatrix} x+2 & 3 \\\\ 5 & y-1 \\end{pmatrix} = \\begin{pmatrix} 5 & 3 \\\\ 5 & 4 \\end{pmatrix}$. Tentukan nilai dari $x + y$.",
+                options: ["8", "7", "9", "6"],
+                correct: 0
+            },
+            {
+                id: 4,
+                difficulty: "Sedang",
+                question: "Diketahui matriks $A = \\begin{pmatrix} 2 & -1 \\\\ 3 & 4 \\end{pmatrix}$ dan $B = \\begin{pmatrix} 1 & 5 \\\\ -2 & 0 \\end{pmatrix}$. Tentukan hasil dari operasi $3A - 2B$.",
+                options: [
+                    "\\begin{pmatrix} 4 & -13 \\\\ 13 & 12 \\end{pmatrix}",
+                    "\\begin{pmatrix} 5 & 3 \\\\ 1 & 4 \\end{pmatrix}",
+                    "\\begin{pmatrix} 4 & 7 \\\\ 5 & 12 \\end{pmatrix}",
+                    "\\begin{pmatrix} 8 & -13 \\\\ 13 & 12 \\end{pmatrix}"
+                ],
+                correct: 0
+            },
+            {
+                id: 5,
+                difficulty: "Sedang",
+                question: "Tentukan hasil perkalian dua matriks berikut: $\\begin{pmatrix} 2 & 1 \\\\ 3 & 4 \\end{pmatrix} \\begin{pmatrix} 1 & 2 \\\\ 0 & 3 \\end{pmatrix}$.",
+                options: [
+                    "\\begin{pmatrix} 2 & 7 \\\\ 3 & 18 \\end{pmatrix}",
+                    "\\begin{pmatrix} 1 & 4 \\\\ 3 & 12 \\end{pmatrix}",
+                    "\\begin{pmatrix} 2 & 4 \\\\ 0 & 12 \\end{pmatrix}",
+                    "\\begin{pmatrix} 5 & 7 \\\\ 3 & 10 \\end{pmatrix}"
+                ],
+                correct: 0
+            },
+            {
+                id: 6,
+                difficulty: "Sedang",
+                question: "Berapakah nilai determinan dari matriks $A = \\begin{pmatrix} 3 & -2 \\\\ 4 & 5 \\end{pmatrix}$?",
+                options: ["23", "7", "15", "-7"],
+                correct: 0
+            },
+            {
+                id: 7,
+                difficulty: "Sedang",
+                question: "Hitunglah nilai determinan dari matriks $B = \\begin{pmatrix} 1 & 2 & 3 \\\\ 0 & 1 & 4 \\\\ 5 & 6 & 0 \\end{pmatrix}$.",
+                options: ["2", "1", "0", "-1"],
+                correct: 0
+            },
+            {
+                id: 8,
+                difficulty: "Sedang",
+                question: "Diketahui matriks $A = \\begin{pmatrix} 2 & 1 \\\\ 4 & 3 \\end{pmatrix}$ dan $B = \\begin{pmatrix} 1 & 0 \\\\ 2 & 1 \\end{pmatrix}$. Tentukan hasil dari operasi penjumlahan dan pengurangan matriks yang divariasikan dengan perkalian skalar berikut: $2A + 3B - \\begin{pmatrix} 5 & 2 \\\\ 10 & 7 \\end{pmatrix}$.",
+                options: [
+                    "\\begin{pmatrix} 2 & 0 \\\\ 4 & 2 \\end{pmatrix}",
+                    "\\begin{pmatrix} 2 & 2 \\\\ 4 & 2 \\end{pmatrix}",
+                    "\\begin{pmatrix} 0 & 0 \\\\ 0 & 0 \\end{pmatrix}",
+                    "\\begin{pmatrix} -2 & -2 \\\\ -4 & -2 \\end{pmatrix}"
+                ],
+                correct: 0
+            },
+            {
+                id: 9,
+                difficulty: "Sulit",
+                question: "Di sebuah toko buah, Ani membeli 2 kg apel dan 1 kg jeruk seharga Rp35.000,00, sedangkan Budi membeli 1 kg apel dan 2 kg jeruk seharga Rp31.000,00. Jika harga 1 kg apel dimisalkan $x$ dan 1 kg jeruk dimisalkan $y$, kerjakan dengan metode invers matriks untuk menentukan harga 1 kg apel ($x$).",
+                options: ["Rp13.000,00", "Rp12.000,00", "Rp15.000,00", "Rp9.000,00"],
+                correct: 0
+            },
+            {
+                id: 10,
+                difficulty: "Sulit",
+                question: "Diketahui variasi kesamaan matriks melalui pengurangan dan perkalian matriks: $\\begin{pmatrix} 5 & 2 \\\\ 4 & 3 \\end{pmatrix} - \\begin{pmatrix} 1 & x \\\\ 2 & 1 \\end{pmatrix} = \\begin{pmatrix} 2 & 1 \\\\ 1 & 2 \\end{pmatrix} \\begin{pmatrix} 2 & 0 \\\\ 0 & 1 \\end{pmatrix}$. Kerjakan dengan teliti untuk menentukan nilai variabel $x$.",
+                options: ["3", "1", "2", "-1"],
+                correct: 0
+            }
+        ];
+
+        let currentIdx = 0;
+        let studentInfo = { name: "", classInfo: "" };
+        let userAnswers = {};
+        let timeLeft = 60 * 60; // 60 menit
+        let timerInterval = null;
+
+        function startQuiz() {
+            const nameInput = document.getElementById('student-name').value.trim();
+            const classInput = document.getElementById('student-class').value.trim();
+
+            if (!nameInput || !classInput) {
+                alert("Mohon isi Nama Lengkap dan Kelas/Absen terlebih dahulu sebelum mulai!");
+                return;
+            }
+
+            studentInfo.name = nameInput;
+            studentInfo.classInfo = classInput;
+
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            
+            loadQuestion();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    autoSubmitQuiz("Waktu habis! Kuis ditutup dan dikirim otomatis.");
+                } else {
+                    timeLeft--;
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = timeLeft % 60;
+                    document.getElementById('timer-display').innerText = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function loadQuestion() {
+            const q = quizData[currentIdx];
+            document.getElementById('question-counter').innerText = `Soal ${currentIdx + 1} dari ${quizData.length}`;
+            
+            const badge = document.getElementById('difficulty-badge');
+            badge.innerText = `Tingkat: ${q.difficulty}`;
+            if(q.difficulty === "Rendah") badge.className = "text-xs px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-medium";
+            else if(q.difficulty === "Sedang") badge.className = "text-xs px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-medium";
+            else badge.className = "text-xs px-3 py-1 bg-rose-100 text-rose-800 rounded-full font-medium";
+
+            document.getElementById('question-text').innerHTML = q.question;
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+
+            q.options.forEach((opt, idx) => {
+                const isSelected = userAnswers[currentIdx] === idx;
+                const card = document.createElement('div');
+                // Menambahkan kelas no-select pada opsi jawaban agar tidak bisa di-highlight/copy
+                card.className = `option-card p-4 rounded-xl border cursor-pointer flex items-center space-x-3 transition no-select ${
+                    isSelected ? 'border-indigo-600 bg-indigo-50/50 ring-1 ring-indigo-600' : 'border-slate-200 bg-white hover:border-slate-300'
+                }`;
+                card.onclick = () => selectOption(idx);
+                card.innerHTML = `
+                    <div class="w-5 h-5 rounded-full border flex items-center justify-center text-xs ${isSelected ? 'border-indigo-600 bg-indigo-600 text-white font-bold' : 'border-slate-300 text-transparent'}">
+                        ${isSelected ? '✓' : ''}
+                    </div>
+                    <div class="text-slate-700 font-medium">$${opt}$</div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('prev-btn').disabled = currentIdx === 0;
+            const nextBtn = document.getElementById('next-btn');
+            if (currentIdx === quizData.length - 1) {
+                nextBtn.innerText = "Selesai";
+            } else {
+                nextBtn.innerText = "Selanjutnya";
+            }
+
+            if (window.MathJax && window.MathJax.typeset) {
+                window.MathJax.typeset();
+            }
+        }
+
+        function selectOption(idx) {
+            userAnswers[currentIdx] = idx;
+            loadQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentIdx < quizData.length - 1) {
+                currentIdx++;
+                loadQuestion();
+            } else {
+                autoSubmitQuiz("Terima kasih telah menyelesaikan seluruh soal latihan matriks ini.");
+            }
+        }
+
+        function autoSubmitQuiz(customMessage) {
+            clearInterval(timerInterval);
+
+            let score = 0;
+            let detailArr = [];
+            quizData.forEach((q, i) => {
+                let ansIdx = userAnswers[i];
+                if (ansIdx === undefined) {
+                    detailArr.push(`No ${i+1}: Kosong`);
+                } else {
+                    let isTrue = ansIdx === q.correct;
+                    score += isTrue ? 10 : 0;
+                    detailArr.push(`No ${i+1}: ${isTrue ? 'B' : 'S'}`);
+                }
+            });
+
+            const payload = {
+                nama: studentInfo.name,
+                kelas: studentInfo.classInfo,
+                skor: score,
+                jawaban: detailArr.join(", ")
+            };
+
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+
+            fetch(SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('finish-screen').classList.remove('hidden');
+                document.getElementById('finish-message').innerText = customMessage + " Data nilai Anda telah tercatat otomatis di spreadsheet guru.";
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('finish-screen').classList.remove('hidden');
+                document.getElementById('finish-message').innerText = customMessage + " (Catatan: Terjadi kendala jaringan saat mengirim ke server).";
+            });
+        }
+
+        function prevQuestion() {
+            if (currentIdx > 0) {
+                currentIdx--;
+                loadQuestion();
+            }
+        }
+    </script>
+</body>
+</html>
